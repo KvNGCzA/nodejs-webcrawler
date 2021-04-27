@@ -21,7 +21,7 @@ const getUrls = async (url, db) => {
       let forward = $(`a[href^="/"]`) || [];
 
       if (!links.length && !forward.length) {
-        // console.log('no links found');
+        console.log('no links found');
         return;
       }
 
@@ -76,9 +76,9 @@ const getUrls = async (url, db) => {
             .write();
 
           promises.push(getUrls(link, db));
+          console.log(link);
         }
 
-        console.log(link);
 
       });
 
@@ -94,10 +94,11 @@ const getUrls = async (url, db) => {
     // console.log('error', error);
   }
 };
+module.exports = getUrls;
 
 const specificNoOfUrls = new Set();
 
-export const specificNumberOfUrls = async (url, n) => {
+const specificNumberOfUrls = async (url, n) => {
   const config = {
     method: "GET",
     url,
@@ -155,8 +156,9 @@ export const specificNumberOfUrls = async (url, n) => {
       }
     }
   } catch (error) {
-    console.log('error', error);
+    // console.log('error', error);
   }
 };
+module.exports.specificNumberOfUrls = specificNumberOfUrls;
 
-export default getUrls;
+

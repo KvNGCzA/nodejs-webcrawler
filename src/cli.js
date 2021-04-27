@@ -1,17 +1,8 @@
-import inquirer from "inquirer";
-import { specificNumberOfUrls } from './';
-import worker from './worker';
-
+const inquirer = require('inquirer');
+const worker = require('./worker');
+const specificNumberOfUrls = require('./');
 // import Proxies from "./Proxies";
-const low = require('lowdb')
-const FileSync = require('lowdb/adapters/FileSync');
 
-const adapter = new FileSync('src/database/db.json');
-const db = low(adapter);
-
-// Set some defaults
-db.defaults({ link: [] })
-  .write();
 
 const arg = require("arg");
 
@@ -62,11 +53,10 @@ export async function cli(args) {
   // console.log('proxy', proxy);
   let neededUrls = new Set();
   if (options.worker > 1) {
-    neededUrls = await specificNumberOfUrls(options.url, options.worker);
+    neededUrls = await specificNumberOfUrls.specificNumberOfUrls(options.url, options.worker);
   } else {
     neededUrls.add(options.url);
   }
-
+  // console.log('Array.from(neededUrls)', Array.from(neededUrls));
   await worker(Array.from(neededUrls));
-  // await crawler(options.url, db);
 }
