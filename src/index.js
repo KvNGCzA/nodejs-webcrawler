@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 // var HttpsProxyAgent = require('https-proxy-agent');
 
 
- const getUrls = async (url, db) => {
+const getUrls = async (url, db) => {
   // const httpsAgent = new HttpsProxyAgent(proxy);
   const config = {
     method: "GET",
@@ -25,38 +25,54 @@ const cheerio = require("cheerio");
         return;
       }
 
-      const pageLinks = [];
+      const pageLinks = new Set();
 
       links.length && links.each((i, el) => {
         const item = $(el).attr("href");
 
-        pageLinks.push(item);
+        pageLinks.add(item);
       });
 
       forward.length && forward.each((i, el) => {
         const item = $(el).attr("href");
 
         if (url[url.length - 1] === '/') {
-          pageLinks.push(url.substring(0, url.length - 1) + item);
+          pageLinks.add(url.substring(0, url.length - 1) + item);
         } else {
-          pageLinks.push(url + item);
+          pageLinks.add(url + item);
         }
       });
 
-      linkTable
-        .push({ url, status: 'unvisited' })
-        .write();
+      let post = db
+        .get('link')
+        .find({
+          link: url
+        })
+        .value();
+
+      if (!post) {
+        linkTable
+          .push({
+            link: url
+          })
+          .write();
+      }
+
       const promises = [];
-      
-      [...new Set(pageLinks)].forEach(link => {
-        const post = db
+
+      pageLinks.forEach(link => {
+        post = db
           .get('link')
-          .find({ link })
+          .find({
+            link
+          })
           .value();
 
         if (!post) {
           linkTable
-            .push({ link, status: 'unvisited' })
+            .push({
+              link
+            })
             .write();
 
           promises.push(getUrls(link, db));
@@ -65,7 +81,7 @@ const cheerio = require("cheerio");
         console.log(link);
 
       });
-      
+
       if (promises.length) {
         await Promise.all(promises);
       }
@@ -76,6 +92,70 @@ const cheerio = require("cheerio");
 
   } catch (error) {
     // console.log('error', error);
+  }
+};
+
+const specificNoOfUrls = new Set();
+
+export const specificNumberOfUrls = async (url, n) => {
+  const config = {
+    method: "GET",
+    url,
+    // httpsAgent,
+  };
+
+  try {
+    if (specificNoOfUrls.size === n) {
+      return specificNoOfUrls;
+    }
+
+    const res = await axios.request(config);
+
+    if (res.status === 200) {
+      const $ = cheerio.load(res.data);
+      let links = $(`a[href^="${url}"]`) || [];
+      let forward = $(`a[href^="/"]`) || [];
+
+      if (!links.length && !forward.length) {
+        console.log('no links found');
+        return specificNoOfUrls;
+      }
+
+      for (let x = 0; x < links.length; x += 1) {
+        const item = $(links[x]).attr("href");
+        specificNoOfUrls.add(item);
+
+        if (specificNoOfUrls.size === n) {
+          return specificNoOfUrls;
+        }
+      }
+
+      for (let x = 0; x < forward.length; x += 1) {
+        const item = $(forward[x]).attr("href");
+
+        if (url[url.length - 1] === '/') {
+          specificNoOfUrls.add(url.substring(0, url.length - 1) + item);
+        } else {
+          specificNoOfUrls.add(url + item);
+        }
+
+        if (specificNoOfUrls.size === n) {
+          return specificNoOfUrls;
+        }
+      }
+
+      if (specificNoOfUrls.size < n) {
+        const promises = [];
+
+        specificNoOfUrls.forEach(link => {
+          promises.push(specificNumberOfUrls(link, n));
+        });
+
+        await Promise.all(promises);
+      }
+    }
+  } catch (error) {
+    console.log('error', error);
   }
 };
 

@@ -1,11 +1,14 @@
 import inquirer from "inquirer";
-import crawler from './';
+import { specificNumberOfUrls } from './';
+import worker from './worker';
+
 // import Proxies from "./Proxies";
 const low = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync');
 
 const adapter = new FileSync('src/database/db.json');
 const db = low(adapter);
+
 // Set some defaults
 db.defaults({ link: [] })
   .write();
@@ -57,6 +60,13 @@ export async function cli(args) {
   // const random_number = Math.floor(Math.random() * 100);
   // const proxy = proxies.getProxy(random_number);
   // console.log('proxy', proxy);
+  let neededUrls = new Set();
+  if (options.worker > 1) {
+    neededUrls = await specificNumberOfUrls(options.url, options.worker);
+  } else {
+    neededUrls.add(options.url);
+  }
 
-  crawler(options.url, db);
+  await worker(Array.from(neededUrls));
+  // await crawler(options.url, db);
 }
