@@ -1,5 +1,5 @@
 const inquirer = require('inquirer');
-const worker = require('./worker');
+const worker = require('./worker').worker;
 const specificNumberOfUrls = require('./');
 // import Proxies from "./Proxies";
 
@@ -53,10 +53,15 @@ export async function cli(args) {
   // console.log('proxy', proxy);
   let neededUrls = new Set();
   if (options.worker > 1) {
-    neededUrls = await specificNumberOfUrls.specificNumberOfUrls(options.url, options.worker);
+    try {
+      neededUrls = await specificNumberOfUrls.specificNumberOfUrls(options.url, options.worker);
+      console.log(`Got ${neededUrls.size} to start scrapping`, neededUrls);
+    } catch (error) {
+      console.log('error cli', error);
+    }
   } else {
     neededUrls.add(options.url);
   }
-  // console.log('Array.from(neededUrls)', Array.from(neededUrls));
+
   await worker(Array.from(neededUrls));
 }

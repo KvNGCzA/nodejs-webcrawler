@@ -1,19 +1,18 @@
 class FloatingUrls {
   constructor() {
-      this.urls = [];
+      this.visited = new Set();
   }
 
-  getUrl () {
-    const url = this.url[this.url.length - 1];
-    this.url = this.url.slice[0, this.url.length]
-    return url;
+  get url () {
+    return this.visited;
   }
 
-  set url(url) {
-    this.url = [...this.url, url];
+  seturl(url) {
+    this.visited.add(url);
+    console.log('this.visited', this.visited);
   }
 }
 
-const availableUrl = new FloatingUrls();
+global.DataStore = new FloatingUrls();
 
-module.exports.availableUrl = availableUrl;
+module.exports = global.DataStore;

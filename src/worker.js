@@ -22,18 +22,19 @@ let i = 0;
 let y = 0
 
 const worker = async (neededUrls) => {
-  function handleWorkerFinished(worker, workerNumber) {
-    if (i < neededUrls.length) {
+  function handleWorkerFinished(worker, workerNumber, url) {
+    if (require('./database/database').new.size > 0) {
       console.log('adding again');
-      worker.postMessage({ url: neededUrls[i] });
+      // worker.postMessage({ url: newData.entries[0] });
       i += 1;
     } else {
       y += 1;
-      // worker[workerNumber].kill();
-      console.log(`Worker number ${workerNumber} completed working!`);
+      // worker.kill();
+      console.log(`Worker number ${workerNumber} completed working! ${url}, ${y} Free workers`);
     }
 
-    if ( y === neededUrls.length) {
+    if (y === neededUrls.length) {
+      console.log('exiting last worker', workerNumber, y);
       process.exit(0);
     }
   }
@@ -48,10 +49,13 @@ const worker = async (neededUrls) => {
     worker.on('message', (messageBody) => {
       //Switch on values in message body, to support different types of message
       if (messageBody.type === 'done') {
-        handleWorkerFinished(worker, j, messageBody);
+        handleWorkerFinished(worker, j, messageBody.url);
       }
     });
   }
 };
 
-module.exports = worker;
+module.exports = {
+  worker,
+  DataBase: db
+};
