@@ -1,8 +1,7 @@
 const inquirer = require('inquirer');
-const worker = require('./worker').worker;
-const specificNumberOfUrls = require('./');
+const chalk = require('chalk');
+const worker = require('./worker');
 // import Proxies from "./Proxies";
-
 
 const arg = require("arg");
 
@@ -45,23 +44,18 @@ export async function cli(args) {
   let options = parseArgs(args);
   options = await promptForMissing(options);
 
-  console.log(options);
+  // console.log(options);
   // const proxies = new Proxies();
   // await proxies.generate();
   // const random_number = Math.floor(Math.random() * 100);
   // const proxy = proxies.getProxy(random_number);
   // console.log('proxy', proxy);
-  let neededUrls = new Set();
-  if (options.worker > 1) {
-    try {
-      neededUrls = await specificNumberOfUrls.specificNumberOfUrls(options.url, options.worker);
-      console.log(`Got ${neededUrls.size} to start scrapping`, neededUrls);
-    } catch (error) {
-      console.log('error cli', error);
-    }
-  } else {
-    neededUrls.add(options.url);
-  }
 
-  await worker(Array.from(neededUrls));
+  const numOfWorkers = options.worker;
+  const url = options.url;
+  if (url) {
+    await worker([url], numOfWorkers);
+  } else {
+    console.log(chalk.red('please enter a valid url'));
+  }
 }

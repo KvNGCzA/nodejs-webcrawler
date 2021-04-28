@@ -1,61 +1,79 @@
 const { join } = require('path');
 const WorkerThread = require('worker_threads');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
+const chalk = require('chalk');
+const log = console.log;
+const sanitizeUrl = require('./').sanitizeUrl;
 
-const adapter = new FileSync('src/database/db.json');
-const db = low(adapter);
-
-// Set some defaults
-const linkTable = db.has('link')
-  .value();
-
-if (!linkTable) {
-  db.defaults({ link: [] })
-    .write();
-}
-
-/**
- * before running Modify THREAD_COUNT
- */
-let i = 0;
 let y = 0
+let initialCount = 0;
+const visited = new Set();
+const notVisited = new Set();
+const freeWorker = [];
 
-const worker = async (neededUrls) => {
-  function handleWorkerFinished(worker, workerNumber, url) {
-    if (require('./database/database').new.size > 0) {
-      console.log('adding again');
-      // worker.postMessage({ url: newData.entries[0] });
-      i += 1;
-    } else {
-      y += 1;
-      // worker.kill();
-      console.log(`Worker number ${workerNumber} completed working! ${url}, ${y} Free workers`);
-    }
+function handleWorkerFinished(worker, workerNumber, pageLinks) {
+  y += 1;
+  freeWorker.push({ worker, workerNumber });
 
-    if (y === neededUrls.length) {
-      console.log('exiting last worker', workerNumber, y);
-      process.exit(0);
-    }
-  }
-
-  //Spin up our initial batch of workers... we will reuse these workers by sending more work as they finish
-  for (let j = 0; j < neededUrls.length; j += 1) {
-    const worker = new WorkerThread.Worker(join(__dirname, './work.js'));
-    worker.postMessage({ url: neededUrls[i] });
-    i += 1;
-
-    //Listen on messages from the worker
-    worker.on('message', (messageBody) => {
-      //Switch on values in message body, to support different types of message
-      if (messageBody.type === 'done') {
-        handleWorkerFinished(worker, j, messageBody.url);
+  if (pageLinks && pageLinks.size) {
+    pageLinks.forEach((link) => {
+      if (!visited.has(link)) {
+        notVisited.add(link);
       }
     });
   }
+
+  // log(chalk.yellow(`Worker number ${workerNumber} completed working! ${y} Free workers`));
+
+  if (freeWorker.length && notVisited.size) {
+    const availableLinks = Array.from(notVisited);
+    let x = 0;
+    while (freeWorker.length && notVisited.size) {
+      const link = availableLinks[x];
+      x += 1;
+      y -= 1;
+
+      const {
+        worker: currentWorker,
+        // workerNumber: currentWorkerNumber
+      } = freeWorker[freeWorker.length - 1];
+      freeWorker.pop();
+      // log(chalk.yellow(`Worker number ${currentWorkerNumber + 1} reassigned! ${y} Free workers`));
+      notVisited.delete(link);
+      currentWorker.postMessage({ url: link });
+      visited.add(link);
+    }
+
+    return;
+  }
+
+  
+  if (y === initialCount) {
+      log(chalk.yellow(`${y} Free workers`));
+      process.exit();
+  }
+}
+const worker = async (urls, numOfWorkers) => {
+  initialCount = numOfWorkers;
+  //Spin up our initial batch of workers... we will reuse these workers by sending more work as they finish
+  for (let j = 0; j < numOfWorkers; j += 1) {
+    const worker = new WorkerThread.Worker(join(__dirname, './work.js'));
+
+    //Listen on messages from the worker
+    worker.on('message', (messageBody) => {
+      if (messageBody.type === 'done') {
+        handleWorkerFinished(worker, j, messageBody.pageLinks);
+      }
+    });
+
+    if (urls[j]) {
+      const link = sanitizeUrl(urls[j]);
+      visited.add(link);
+      worker.postMessage({ url: link });
+    } else {
+      y += 1;
+      freeWorker.push({ worker, workerNumber: j });
+    }
+  }
 };
 
-module.exports = {
-  worker,
-  DataBase: db
-};
+module.exports = worker;

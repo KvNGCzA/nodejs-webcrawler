@@ -1,5 +1,6 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
+
 export default class Proxies {
   constructor() {
     this.ip_addresses = [];
