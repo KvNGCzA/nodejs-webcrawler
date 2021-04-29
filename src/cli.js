@@ -17,7 +17,7 @@ function parseArgs(rawArgs) {
 
   return {
     url: args['--url'],
-    worker: args['--num'] || 1,
+    worker: args['--num'],
   }
 }
 
@@ -31,12 +31,20 @@ async function promptForMissing(options) {
     });
   }
 
+  if (!options.url) {
+    questions.push({
+      type: 'number',
+      name: 'worker',
+      message: 'please enter the number of workers you would like to use, else it will default to 1',
+    });
+  }
+
   const answers = await inquirer.prompt(questions);
 
   return {
     ...options,
     url: options.url || answers.url,
-    worker: options.worker || answers.worker
+    worker: options.worker || answers.worker 
   }
 }
 
@@ -51,10 +59,10 @@ export async function cli(args) {
   // const proxy = proxies.getProxy(random_number);
   // console.log('proxy', proxy);
 
-  const numOfWorkers = options.worker;
+  const numOfWorkers = options.worker || 1;
   const url = options.url;
   if (url) {
-    await worker([url], numOfWorkers);
+    await worker(url, numOfWorkers);
   } else {
     console.log(chalk.red('please enter a valid url'));
   }

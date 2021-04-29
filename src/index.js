@@ -28,6 +28,7 @@ const extractLastSlash = (url) => {
 const getUrls = async (url) => {
   log(chalk.green(url));
   const sanitizedUrl = sanitizeUrl(url);
+  const pageLinks = new Set();
 
   try {
     const res = await axios.request({
@@ -44,10 +45,9 @@ const getUrls = async (url) => {
       let forward = $(`a[href^="/"]`) || [];
 
       if (!links.length && !forward.length) {
-        return new Set();
+        return pageLinks;
       }
 
-      const pageLinks = new Set();
 
       links.length && links.each((i, el) => {
         const item = $(el).attr("href");
@@ -62,8 +62,9 @@ const getUrls = async (url) => {
       return pageLinks;
     }
 
+    return pageLinks;
   } catch (error) {
-    return new Set();
+    return pageLinks;
   }
 };
 
