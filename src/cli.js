@@ -3,7 +3,7 @@ const chalk = require('chalk');
 const init = require('./worker');
 const { getPrefix } = require('./helper');
 
-const arg = require("arg");
+const arg = require('arg');
 const log = console.log;
 
 const logErr = errMsg => {
@@ -73,12 +73,10 @@ const cli = async (args) => {
   try {
     options = parseArgs(args);
   } catch (error) {
-    logErr('an error occured, please provide an argument for -n and -u flags');
-    process.exit();
+    logErr('An error occurred, please provide valid arguments for -n and -u flags');
+    process.exit(9);
   }
   options = await promptForMissing(options);
-
-  log('Crawler started:', options);
 
   const numOfWorkers = options.numberOfWorkers;
   const url = options.url;
@@ -86,6 +84,7 @@ const cli = async (args) => {
   if (isNaN(numOfWorkers)) {
     logErr('number of workers must be a valid number');
   } else {
+    log('Crawler started:', options);
     await init(url, numOfWorkers);
   }
 }

@@ -5,13 +5,13 @@ const getHostUrl = (url) => {
   const prefix = getPrefix(url);
   let hostUrl = new URL(url);
 
-  return prefix ? prefix + hostUrl.host : "https://" + hostUrl.host;
+  return prefix ? prefix + hostUrl.host : 'https://' + hostUrl.host;
 };
 
 // Return url without last forward slash
 // e.g /something-else  /something-else/
 const removeLastSlash = (url) => {
-  return url[url.length - 1] === "/" ? url.substring(0, url.length - 1) : url;
+  return url[url.length - 1] === '/' ? url.substring(0, url.length - 1) : url;
 };
 
 // Return prefix attached to link

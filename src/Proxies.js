@@ -1,30 +1,30 @@
-const axios = require("axios");
-const cheerio = require("cheerio");
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 class Proxies {
   constructor() {
-    this.ip_addresses = [];
-    this.port_numbers = [];
+    this.ipAddresses = [];
+    this.portNumbers = [];
   }
 
   async generate() {
     try {
-      const ip_addresses = [];
-      const port_numbers = [];
-      const res = await axios.get("https://sslproxies.org/");
+      const ipAddresses = [];
+      const portNumbers = [];
+      const res = await axios.get('https://sslproxies.org/');
       if (res.status === 200) {
         const $ = cheerio.load(res.data);
 
-        $("td:nth-child(1)").each(function() {
-          ip_addresses.push($(this).text());
+        $('td:nth-child(1)').each(function() {
+          ipAddresses.push($(this).text());
         });
 
-        $("td:nth-child(2)").each(function() {
-          port_numbers.push(Number($(this).text()));
+        $('td:nth-child(2)').each(function() {
+          portNumbers.push(Number($(this).text()));
         });
 
-        this.ip_addresses = ip_addresses;
-        this.port_numbers = port_numbers;
+        this.ipAddresses = ipAddresses;
+        this.portNumbers = portNumbers;
       } else {
         console.log('encountered some kind of error');
       }
@@ -38,8 +38,8 @@ class Proxies {
 
     return {
       protocol: 'https',
-      host: this.ip_addresses[proxyNum],
-      port: this.port_numbers[proxyNum]
+      host: this.ipAddresses[proxyNum],
+      port: this.portNumbers[proxyNum]
     }
   }
 }

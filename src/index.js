@@ -1,9 +1,9 @@
-// const axios = require("axios-proxy-fix");
-const axios = require("axios");
-const cheerio = require("cheerio");
+// const axios = require('axios-proxy-fix');
+const axios = require('axios');
+const cheerio = require('cheerio');
 const chalk = require('chalk');
 const UserAgent = require('user-agents');
-const { removeLastSlash } = require("./helper");
+const { removeLastSlash } = require('./helper');
 const log = console.log;
 
 const getUrls = async ({ url, hostUrl, proxy }) => {
@@ -34,10 +34,10 @@ const getUrls = async ({ url, hostUrl, proxy }) => {
     if (res.status === 200) {
       const $ = cheerio.load(res.data);
 
-      // Get all links containing host url
-      let links = $(`a[href^="${hostUrl}"]`) || [];
+      // Get all links starting with host url
+      let links = $(`a[href^='${hostUrl}']`) || [];
       // Get all links starting with forward slash
-      let containsForwardSlash = $(`a[href^="/"]`) || [];
+      let containsForwardSlash = $(`a[href^='/']`) || [];
 
       if (!links.length && !containsForwardSlash.length) {
         // No links found
@@ -45,12 +45,12 @@ const getUrls = async ({ url, hostUrl, proxy }) => {
       }
 
       links.length && links.each((i, el) => {
-        const item = $(el).attr("href");
+        const item = $(el).attr('href');
         pageLinks.add(removeLastSlash(item));
       });
 
       containsForwardSlash.length && containsForwardSlash.each((i, el) => {
-        const item = $(el).attr("href");
+        const item = $(el).attr('href');
         pageLinks.add(hostUrl + removeLastSlash(item));
       });
 
