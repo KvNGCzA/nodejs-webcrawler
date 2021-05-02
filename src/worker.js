@@ -64,7 +64,7 @@ const  handleWorkerFinished = pageLinks => {
   // If all workers are free, end process
   if (numberOfFreeWorkers === numberOfCreatedWorkers) {
     log(chalk.yellow(`Crawled ${visited.size} link(s)`));
-    log(chalk.yellow(`Created ${numberOfCreatedWorkers} worker(s) out of a possible ${maxNumOfWorkers}`));
+    log(chalk.yellow(`${numberOfCreatedWorkers} worker(s) used out of a possible ${maxNumOfWorkers}`));
     process.exit();
   }
 }
