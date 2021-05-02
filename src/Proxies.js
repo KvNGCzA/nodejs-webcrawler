@@ -20,8 +20,9 @@ class Proxies {
         });
 
         $("td:nth-child(2)").each(function() {
-          port_numbers.push($(this).text());
+          port_numbers.push(Number($(this).text()));
         });
+
         this.ip_addresses = ip_addresses;
         this.port_numbers = port_numbers;
       } else {
@@ -36,6 +37,7 @@ class Proxies {
     const proxyNum = Math.floor(Math.random() * 20);
 
     return {
+      protocol: 'https',
       host: this.ip_addresses[proxyNum],
       port: this.port_numbers[proxyNum]
     }

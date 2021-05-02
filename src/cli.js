@@ -2,7 +2,6 @@ const inquirer = require('inquirer');
 const chalk = require('chalk');
 const init = require('./worker');
 const { getPrefix } = require('./helper');
-// import Proxies from "./Proxies";
 
 const arg = require("arg");
 const log = console.log;
@@ -81,24 +80,13 @@ const cli = async (args) => {
 
   log('Crawler started:', options);
 
-  /**
-   * Using proxies to mask users ips from getting blocked
-   * Update: Skipping this step because it causes more problems
-   * than it fixes. For a real application being deployed to
-   * production, this is an important feature.
-   */
-  // const proxies = new Proxies();
-  // await proxies.generate();
-  // const proxy = proxies.getProxy();
-  // log('proxy', proxy);
-
   const numOfWorkers = options.numberOfWorkers;
   const url = options.url;
 
   if (isNaN(numOfWorkers)) {
     logErr('number of workers must be a valid number');
   } else {
-    init(url, numOfWorkers);
+    await init(url, numOfWorkers);
   }
 }
 
