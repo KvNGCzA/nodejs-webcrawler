@@ -74,7 +74,12 @@ const  handleWorkerFinished = pageLinks => {
 }
 
 const init = async (url, numOfWorkers) => {
-  await proxies.generate();
+  try {
+    await proxies.generate();
+  } catch (error) {
+    log(chalk.red('error generating proxies'));
+  }
+
   const proxy = proxies.getProxy();
   maxNumOfWorkers = numOfWorkers;
   const worker = createWorker(numberOfCreatedWorkers);

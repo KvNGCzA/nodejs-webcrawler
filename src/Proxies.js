@@ -1,6 +1,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+const proxyProvider = 'https://sslproxies.org/';
+
 class Proxies {
   constructor() {
     this.ipAddresses = [];
@@ -11,7 +13,8 @@ class Proxies {
     try {
       const ipAddresses = [];
       const portNumbers = [];
-      const res = await axios.get('https://sslproxies.org/');
+      const res = await axios.get(proxyProvider);
+
       if (res.status === 200) {
         const $ = cheerio.load(res.data);
 
@@ -34,7 +37,11 @@ class Proxies {
   }
 
   getProxy() {
-    const proxyNum = Math.floor(Math.random() * 20);
+    const proxyNum = Math.floor(Math.random() * this.ipAddresses.length);
+
+    if (!this.ipAddresses.length) {
+      return false
+    }
 
     return {
       protocol: 'https',
