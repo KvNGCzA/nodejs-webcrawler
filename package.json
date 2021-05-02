@@ -22,8 +22,7 @@
     "cheerio": "*",
     "esm": "^3.2.25",
     "https-proxy-agent": "^5.0.0",
-    "inquirer": "^8.0.0",
-    "request": "^2.88.2"
+    "inquirer": "^8.0.0"
   },
   "devDependencies": {
     "eslint": "^7.25.0"

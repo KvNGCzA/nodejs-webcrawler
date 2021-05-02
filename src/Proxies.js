@@ -1,7 +1,7 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-export default class Proxies {
+class Proxies {
   constructor() {
     this.ip_addresses = [];
     this.port_numbers = [];
@@ -32,7 +32,14 @@ export default class Proxies {
     }
   }
 
-  getProxy(x) {
-    return `https://${this.ip_addresses[x]}:${this.port_numbers[x]}`;
+  getProxy() {
+    const proxyNum = Math.floor(Math.random() * 20);
+
+    return {
+      host: this.ip_addresses[proxyNum],
+      port: this.port_numbers[proxyNum]
+    }
   }
 }
+
+module.exports = Proxies;

@@ -1,11 +1,17 @@
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-const worker = require('./worker');
+const init = require('./worker');
+const { getPrefix } = require('./helper');
 // import Proxies from "./Proxies";
 
 const arg = require("arg");
+const log = console.log;
 
-function parseArgs(rawArgs) {
+const logErr = errMsg => {
+  log(chalk.red(errMsg));
+};
+
+const parseArgs = rawArgs => {
   const args = arg({
     '--url': String,
     '--num': Number,
@@ -17,53 +23,83 @@ function parseArgs(rawArgs) {
 
   return {
     url: args['--url'],
-    worker: args['--num'],
+    numberOfWorkers: args['--num'],
   }
 }
 
-async function promptForMissing(options) {
+const promptForMissing = async options => {
   const questions = [];
-  if (!options.url) {
+  if (!options.url || !getPrefix(options.url)) {
+    const message = !options.url ?
+      'please enter a valid url e.g "https://example.com":' :
+        'please prefix your url with "https" or "http":';
+
     questions.push({
       type: 'input',
       name: 'url',
-      message: 'please enter a valid url',
+      message,
+      validate: (value) => {
+        if (value && getPrefix(value)) {
+          return true;
+        }
+
+        return false;
+      },
     });
   }
 
-  if (!options.url) {
+  if (!options.numberOfWorkers || isNaN(options.numberOfWorkers)) {
+    const message = options.numberOfWorkers === undefined ?
+      'please enter the number of workers you would like to use, else it will default to 1:' :
+        'please enter a valid number:';
+
     questions.push({
       type: 'number',
-      name: 'worker',
-      message: 'please enter the number of workers you would like to use, else it will default to 1',
+      name: 'numberOfWorkers',
+      message,
+      default: 1
     });
   }
 
   const answers = await inquirer.prompt(questions);
 
   return {
-    ...options,
-    url: options.url || answers.url,
-    worker: options.worker || answers.worker 
+    url: answers.url || options.url,
+    numberOfWorkers: answers.numberOfWorkers || options.numberOfWorkers
   }
 }
 
-export async function cli(args) {
-  let options = parseArgs(args);
+const cli = async (args) => {
+  let options;
+  try {
+    options = parseArgs(args);
+  } catch (error) {
+    logErr('an error occured, please provide an argument for -n and -u flags');
+    process.exit();
+  }
   options = await promptForMissing(options);
 
-  // console.log(options);
+  log('Crawler started:', options);
+
+  /**
+   * Using proxies to mask users ips from getting blocked
+   * Update: Skipping this step because it causes more problems
+   * than it fixes. For a real application being deployed to
+   * production, this is an important feature.
+   */
   // const proxies = new Proxies();
   // await proxies.generate();
-  // const random_number = Math.floor(Math.random() * 100);
-  // const proxy = proxies.getProxy(random_number);
-  // console.log('proxy', proxy);
+  // const proxy = proxies.getProxy();
+  // log('proxy', proxy);
 
-  const numOfWorkers = options.worker || 1;
+  const numOfWorkers = options.numberOfWorkers;
   const url = options.url;
-  if (url) {
-    await worker(url, numOfWorkers);
+
+  if (isNaN(numOfWorkers)) {
+    logErr('number of workers must be a valid number');
   } else {
-    console.log(chalk.red('please enter a valid url'));
+    init(url, numOfWorkers);
   }
 }
+
+module.exports = cli;

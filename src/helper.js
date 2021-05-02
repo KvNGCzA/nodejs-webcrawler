@@ -9,15 +9,6 @@ const getHostUrl = (url) => {
 };
 
 // Return url without last forward slash
-// and include a prefix if url has none
-// e.g https://crossover.com/something-else  from crossover.com/something-else/
-const sanitizeUrl = (url) => {
-  const prefix = getPrefix(url);
-
-  return prefix ? removeLastSlash(url) : "https://" + removeLastSlash(url);
-};
-
-// Return url without last forward slash
 // e.g /something-else  /something-else/
 const removeLastSlash = (url) => {
   return url[url.length - 1] === "/" ? url.substring(0, url.length - 1) : url;
@@ -33,6 +24,6 @@ const getPrefix = (url) => {
 
 module.exports = {
   getHostUrl,
-  sanitizeUrl,
-  removeLastSlash,
+  getPrefix,
+  removeLastSlash
 };

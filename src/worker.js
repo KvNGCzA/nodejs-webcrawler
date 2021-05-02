@@ -1,7 +1,7 @@
 const { join } = require('path');
 const WorkerThread = require('worker_threads');
 const chalk = require('chalk');
-const { sanitizeUrl, getHostUrl} = require('./helper');
+const { removeLastSlash, getHostUrl } = require('./helper');
 const log = console.log;
 
 let numberOfFreeWorkers = 0
@@ -12,10 +12,7 @@ const visited = new Set();
 const notVisited = new Set();
 const freeWorkers = [];
 
-function handleWorkerFinished(worker, workerNumber, pageLinks) {
-  numberOfFreeWorkers += 1;
-  freeWorkers.push({ worker, workerNumber });
-
+const  handleWorkerFinished = pageLinks => {
   if (pageLinks && pageLinks.size) {
     pageLinks.forEach((link) => {
       if (!visited.has(link)) {
@@ -28,20 +25,18 @@ function handleWorkerFinished(worker, workerNumber, pageLinks) {
   if (freeWorkers.length && notVisited.size) {
     const availableLinks = Array.from(notVisited);
     let x = 0;
+
     while (freeWorkers.length && notVisited.size) {
-      const link = availableLinks[x];
+      const url = availableLinks[x];
       x += 1;
       numberOfFreeWorkers -= 1;
 
-      const {
-        worker: currentWorker,
-        // workerNumber: currentWorkerNumber
-      } = freeWorkers[freeWorkers.length - 1];
+      const { worker } = freeWorkers[freeWorkers.length - 1];
       freeWorkers.pop();
-      // log(chalk.yellow(`Worker number ${currentWorkerNumber + 1} reassigned to ${link}!`));
-      notVisited.delete(link);
-      currentWorker.postMessage({ url: link, hostUrl });
-      visited.add(link);
+      // log(chalk.yellow(`Worker number ${workerNumber} reassigned to ${url}!`));
+      notVisited.delete(url);
+      visited.add(url);
+      worker.postMessage({ url, hostUrl });
     }
   }
 
@@ -49,51 +44,58 @@ function handleWorkerFinished(worker, workerNumber, pageLinks) {
   // Do not exceed number of specified workers
   let index = 0;
   const notVisitedSize = notVisited.size;
+
   if (numberOfCreatedWorkers < maxNumOfWorkers && notVisitedSize) {
     const availableLinks = Array.from(notVisited);
 
     while (numberOfCreatedWorkers < maxNumOfWorkers && numberOfCreatedWorkers < notVisitedSize) {
       index += 1;
-      
-      const newWorker = createWorker(numberOfCreatedWorkers);
-      const link = availableLinks[index];
 
-      visited.add(link);
-      notVisited.delete(link);
-      newWorker.postMessage({ url: link, hostUrl });
+      const worker = createWorker(numberOfCreatedWorkers);
+      const url = availableLinks[index];
+
+      // log(chalk.yellow('creating new worker', numberOfCreatedWorkers, url));
+      notVisited.delete(url);
+      visited.add(url);
+      worker.postMessage({ url, hostUrl });
     }
   }
 
   // If all workers are free, end process
   if (numberOfFreeWorkers === numberOfCreatedWorkers) {
-      log(chalk.yellow(`Crawled ${visited.size} link(s)`));
-      log(chalk.yellow(`Created ${numberOfCreatedWorkers} worker(s) out of a possible ${maxNumOfWorkers}`));
-      process.exit();
+    log(chalk.yellow(`Crawled ${visited.size} link(s)`));
+    log(chalk.yellow(`Created ${numberOfCreatedWorkers} worker(s) out of a possible ${maxNumOfWorkers}`));
+    process.exit();
   }
 }
 
-const worker = async (url, numOfWorkers) => {
+const init = (url, numOfWorkers) => {
   maxNumOfWorkers = numOfWorkers;
   const worker = createWorker(numberOfCreatedWorkers);
-  const link = sanitizeUrl(url);
-  hostUrl = getHostUrl(link);
+  const link = removeLastSlash(url);
+  hostUrl = getHostUrl(url);
 
   visited.add(link);
-  worker.postMessage({ url: link, hostUrl });
+  worker.postMessage({
+    url: link,
+    hostUrl
+  });
 };
 
-const createWorker = (index) => {
+const createWorker = workerNumber => {
   numberOfCreatedWorkers += 1;
-  const worker = new WorkerThread.Worker(join(__dirname, './worker_service.js'));
+  const worker = new WorkerThread.Worker(join(__dirname, 'worker_service.js'));
 
   //Listen on messages from the worker
-  worker.on('message', (messageBody) => {
+  worker.on('message', messageBody => {
     if (messageBody.type === 'done') {
-      handleWorkerFinished(worker, index, messageBody.pageLinks);
+      freeWorkers.push({ worker, workerNumber });
+      numberOfFreeWorkers += 1;
+      handleWorkerFinished(messageBody.pageLinks);
     }
   });
 
   return worker;
 }
 
-module.exports = worker;
+module.exports = init;
