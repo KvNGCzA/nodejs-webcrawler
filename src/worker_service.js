@@ -37,6 +37,7 @@ const getUrls = async ({ url, hostUrl, proxy }) => {
        * production, a premium ip provider will be used.
        * This is an important feature.
        * To use proxy, uncomment line 1, 29 and comment out line 2
+       * Do not use proxy for google
        */
     });
 

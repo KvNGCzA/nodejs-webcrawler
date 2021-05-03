@@ -5,7 +5,6 @@ const { removeLastSlash, getHostUrl } = require('./helper');
 const Proxies = require('./Proxies');
 const log = console.log;
 
-let numberOfFreeWorkers = 0
 let numberOfCreatedWorkers = 0
 let maxNumOfWorkers = 0;
 let hostUrl = null;
@@ -31,20 +30,22 @@ const  handleWorkerFinished = pageLinks => {
     while (freeWorkers.length && notVisited.size) {
       const url = availableLinks[x];
       x += 1;
-      numberOfFreeWorkers -= 1;
 
+      const proxy = proxies.getProxy();
       const { worker } = freeWorkers[freeWorkers.length - 1];
       freeWorkers.pop();
-      const proxy = proxies.getProxy();
-      // log(chalk.yellow(`Worker number ${workerNumber} reassigned to ${url}!`));
+
       notVisited.delete(url);
       visited.add(url);
       worker.postMessage({ url, hostUrl, proxy });
     }
   }
 
-  // Create new worker(s) if there are no free workers
-  // Do not exceed number of specified workers
+  /**
+   * Create new worker(s) if there are no free workers
+   * Do not exceed number of specified workers
+   * This ensures we never create more workers than we need
+  */
   let index = 0;
   const notVisitedSize = notVisited.size;
 
@@ -58,7 +59,6 @@ const  handleWorkerFinished = pageLinks => {
       const url = availableLinks[index];
       const proxy = proxies.getProxy();
 
-      // log(chalk.yellow('creating new worker', numberOfCreatedWorkers, url));
       notVisited.delete(url);
       visited.add(url);
       worker.postMessage({ url, hostUrl, proxy });
@@ -66,7 +66,7 @@ const  handleWorkerFinished = pageLinks => {
   }
 
   // If all workers are free, end process
-  if (numberOfFreeWorkers === numberOfCreatedWorkers) {
+  if (freeWorkers.length === numberOfCreatedWorkers) {
     log(chalk.yellow(`Crawled ${visited.size} link(s)`));
     log(chalk.yellow(`${numberOfCreatedWorkers} worker(s) used out of a possible ${maxNumOfWorkers}`));
     process.exit();
@@ -102,7 +102,6 @@ const createWorker = workerNumber => {
   worker.on('message', messageBody => {
     if (messageBody.type === 'done') {
       freeWorkers.push({ worker, workerNumber });
-      numberOfFreeWorkers += 1;
       handleWorkerFinished(messageBody.pageLinks);
     }
   });
