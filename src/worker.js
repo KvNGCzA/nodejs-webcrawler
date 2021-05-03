@@ -1,13 +1,13 @@
 const { join } = require('path');
 const WorkerThread = require('worker_threads');
 const chalk = require('chalk');
-const { removeLastSlash, getHostUrl } = require('./helper');
+const { removeLastSlash, getUrlDetails } = require('./helper');
 const Proxies = require('./Proxies');
 const log = console.log;
 
 let numberOfCreatedWorkers = 0
 let maxNumOfWorkers = 0;
-let hostUrl = null;
+let urlDetails = null;
 const visited = new Set();
 const notVisited = new Set();
 const freeWorkers = [];
@@ -37,7 +37,7 @@ const  handleWorkerFinished = pageLinks => {
 
       notVisited.delete(url);
       visited.add(url);
-      worker.postMessage({ url, hostUrl, proxy });
+      worker.postMessage({ url, urlDetails, proxy });
     }
   }
 
@@ -61,7 +61,7 @@ const  handleWorkerFinished = pageLinks => {
 
       notVisited.delete(url);
       visited.add(url);
-      worker.postMessage({ url, hostUrl, proxy });
+      worker.postMessage({ url, urlDetails, proxy });
     }
   }
 
@@ -84,14 +84,10 @@ const init = async (url, numOfWorkers) => {
   maxNumOfWorkers = numOfWorkers;
   const worker = createWorker(numberOfCreatedWorkers);
   const link = removeLastSlash(url);
-  hostUrl = getHostUrl(url);
+  urlDetails = getUrlDetails(url);
 
   visited.add(link);
-  worker.postMessage({
-    url: link,
-    hostUrl,
-    proxy
-  });
+  worker.postMessage({ url: link, urlDetails, proxy });
 };
 
 const createWorker = workerNumber => {

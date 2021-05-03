@@ -1,10 +1,11 @@
 // const axios = require('axios-proxy-fix');
 const axios = require('axios');
-const { parentPort } = require('worker_threads');
 const cheerio = require('cheerio');
 const chalk = require('chalk');
+const wUrl = require('whatwg-url');
 const UserAgent = require('user-agents');
-const { removeLastSlash } = require('./helper');
+const { parentPort } = require('worker_threads');
+const { removeLastSlash, getPrefixedHost } = require('./helper');
 const log = console.log;
 
 parentPort.on('message', async workerData => {
@@ -13,7 +14,7 @@ parentPort.on('message', async workerData => {
   parentPort.postMessage({ type: 'done', pageLinks });
 });
 
-const getUrls = async ({ url, hostUrl, proxy }) => {
+const getUrls = async ({ url, urlDetails, proxy }) => {
   log(chalk.green(url));
   const pageLinks = new Set();
 
@@ -26,7 +27,7 @@ const getUrls = async ({ url, hostUrl, proxy }) => {
          * rotate the ip addresses to avoid detection.
          */
       },
-      // proxy, 
+      // proxy,
       /**
        * Using proxies to mask users ips from getting blocked
        * UPDATE: Skipping this step because it causes more problems
@@ -43,25 +44,39 @@ const getUrls = async ({ url, hostUrl, proxy }) => {
 
     if (res.status === 200) {
       const $ = cheerio.load(res.data);
+      const links = $(`a`) || [];
 
-      // Get all links starting with host url
-      let links = $(`a[href^='${hostUrl}']`) || [];
-      // Get all links starting with forward slash
-      let containsForwardSlash = $(`a[href^='/']`) || [];
-
-      if (!links.length && !containsForwardSlash.length) {
+      if (!links.length) {
         // No links found
         return pageLinks;
       }
 
-      links.length && links.each((i, el) => {
-        const item = $(el).attr('href');
-        pageLinks.add(removeLastSlash(item));
-      });
+      links.each((i, el) => {
+        const href = $(el).attr('href');
 
-      containsForwardSlash.length && containsForwardSlash.each((i, el) => {
-        const item = $(el).attr('href');
-        pageLinks.add(hostUrl + removeLastSlash(item));
+        if (href) {
+          const parsedUrl = wUrl.parseURL(href);
+
+          if (parsedUrl) {
+            const parsedHost = parsedUrl.host;
+            const regex1 = new RegExp(`(?!\\w)(\\.)?${urlDetails.base}(\\.)?(?!\\w)`);
+            const regex2 = new RegExp(`^${urlDetails.base}\\.`);
+
+            /**
+             * This allows us get domains and their subdomains
+             * e.g. google.com, mail.google.com, google.org,
+             * yourplanyourplanet.sustainability.google e.t.c.
+            */
+            if (
+              parsedHost &&
+              (regex1.test(parsedHost) || regex2.test(parsedHost))
+            ) {
+              pageLinks.add(removeLastSlash(href));
+            }
+          } else if (href[0] === '/') {
+            pageLinks.add(getPrefixedHost(url) + removeLastSlash(href));
+          }
+        }
       });
 
       return pageLinks;

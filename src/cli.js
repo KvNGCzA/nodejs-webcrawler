@@ -68,12 +68,14 @@ const promptForMissing = async options => {
   }
 }
 
-const cli = async (args) => {
+const cli = async args => {
   let options;
   try {
     options = parseArgs(args);
   } catch (error) {
-    logErr('An error occurred, please provide valid arguments for -n and -u flags');
+    logErr(`An error occurred, please provide valid arguments for -n and -u flags
+      e.g "crawler -u https://example.com -n 10"
+    `);
     process.exit(9);
   }
   options = await promptForMissing(options);
@@ -84,7 +86,7 @@ const cli = async (args) => {
   if (isNaN(numOfWorkers)) {
     logErr('number of workers must be a valid number');
   } else {
-    log('Crawler started:', options);
+    log(chalk.bgBlue(`Crawler started for ${options.url} using ${options.numberOfWorkers} workers`));
     await init(url, numOfWorkers);
   }
 }

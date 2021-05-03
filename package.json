@@ -27,7 +27,8 @@
     "esm": "^3.2.25",
     "https-proxy-agent": "^5.0.0",
     "inquirer": "^8.0.0",
-    "user-agents": "^1.0.639"
+    "user-agents": "^1.0.639",
+    "whatwg-url": "^8.5.0"
   },
   "devDependencies": {
     "eslint": "^7.25.0"
